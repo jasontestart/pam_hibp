@@ -3,7 +3,7 @@
 A Pluggable Authentication Module (PAM) for Linux that interacts with the 
 [Have I Been Pwned](https://haveibeenpwned.com/) **Pwned Password** API using k-Anonymity.
  It is designed work with other authentication modules 
-(e.g. pam_unix) to support both authenication and password management interfaces.
+(e.g., pam_unix) to support both authenication and password management interfaces.
 
 ## Dependencies
 
@@ -86,8 +86,8 @@ as you will likely end-up with an insecure configuration by doing so.**
 
 With no arguments, the `pam_hibp` module, through `libhibp`, will take the SHA1 hash of the provided
 password, and using k-Anonymity, will lookup the hash using the [Pwned Password API](https://haveibeenpwned.com/API/v3#PwnedPasswords) at `https://api.pwnedpasswords.com/range/`.
-If the hash is found one or more time in the database, then authentication (or password change) is rejected
- and the action is recorded to syslog. The module's behaviour may be modified as follows:
+If the hash is found one or more times in the database, then authentication (or password change) is rejected
+ and the action is recorded to syslog. The module's behaviour may be modified with the following arguments:
 
 **auditonly**
 
@@ -97,7 +97,7 @@ Authentication or password change will not be affected by the module.
 **proxy**
 
 You can configure the module to use a proxy server when connecting to the Pwned Password API. Any proxy
-supported my `libcurl` is supported, provided the the scheme can be defined with a url prefix. 
+supported by `libcurl` is supported, provided the the scheme can be defined with a url prefix. 
 
 Example: `proxy=https://myproxy.internal:3128/`.
 
