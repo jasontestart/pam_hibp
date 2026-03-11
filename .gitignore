@@ -1,0 +1,9 @@
+# Compilied Binaries
+*.so
+*.so.*
+*.a
+*.o
+
+# Build/OS Artifacts
+.DS_Store
+.cache/

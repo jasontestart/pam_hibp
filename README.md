@@ -1,0 +1,127 @@
+# pam_hibp
+
+A Pluggable Authentication Module (PAM) for Linux that interacts with the 
+[Have I Been Pwned](https://haveibeenpwned.com/) **Pwned Password** API using k-Anonymity.
+ It is designed work with other authentication modules 
+(e.g. pam_unix) to support both authenication and password management interfaces.
+
+## Dependencies
+
+To build and install this module, you will need to:
+1. Build and install the [libhibp](https://github.com/jasontestart/libhibp) library.
+2. Install the PAM development libraries. 
+
+### Debian-based installation
+```bash
+sudo apt update
+sudo apt install libpam0g-dev
+```
+
+### RHEL-based installation
+```bash
+sudo dnf install pam-devel
+```
+
+## Building & Installing
+```bash
+make
+sudo make install
+```
+
+## Configuration
+
+### Stack placement by module interface
+
+#### Password
+
+For the PAM password interface, this module should be placed early in the PAM stack, 
+right **before** the module that does the "real work" (typically `pam_unix`). 
+The control flag `requisite` is recommended, so that unacceptable passwords are
+rejected early.
+
+On a Debian-based system (including Ubuntu and Mint), a simple insertion at the top of the stack should
+be all that's needed:
+
+**password stack (e.g., /etc/pam.d/common-password)**
+```txt
+# Check if the password is pwned before doing anything else
+password    requisite           pam_hibp.so
+# here are the per-package modules (the "Primary" block)
+password	[success=1 default=ignore]	pam_unix.so obscure yescrypt
+# here's the fallback if no module succeeds
+password	requisite			pam_deny.so
+# prime the stack with a positive return value if there isn't one already;
+# this avoids us returning an error just because nothing sets a success code
+# since the modules above will each just jump around
+password	required			pam_permit.so
+# and here are more per-package modules (the "Additional" block)
+password	optional	pam_gnome_keyring.so 
+```
+
+#### Auth
+
+For the PAM auth interface, ....
+
+**auth stack (e.g., /etc/pam.d/common-auth)**
+```txt  
+# here are the per-package modules (the "Primary" block)
+auth    [success=1 default=ignore]  pam_unix.so nullok
+# here's the fallback if no module succeeds
+auth    requisite           pam_deny.so
+# prime the stack with a positive return value if there isn't one already;
+# this avoids us returning an error just because nothing sets a success code
+# since the modules above will each just jump around
+auth    required            pam_permit.so
+# and here are more per-package modules (the "Additional" block)
+auth    optional            pam_cap.so
+# end of pam-auth-update config
+```
+
+#### Caution
+
+**The use of `sufficient` or `optional` control flags with this module are not recommended,
+as you will likely end-up with an insecure configuration by doing so.**
+
+### Module Arguments
+
+With no arguments, the `pam_hibp` module, through `libhibp`, will take the SHA1 hash of the provided
+password, and using k-Anonymity, will lookup the hash using the [Pwned Password API](https://haveibeenpwned.com/API/v3#PwnedPasswords) at `https://api.pwnedpasswords.com/range/`.
+If the hash is found one or more time in the database, then authentication (or password change) is rejected
+ and the action is recorded to syslog. The module's behaviour may be modified as follows:
+
+**auditonly**
+
+If the `auditonly` argument is present, then the detection of a Pwned Password will be written to syslog.
+Authentication or password change will not be affected by the module.
+
+**proxy**
+
+You can configure the module to use a proxy server when connecting to the Pwned Password API. Any proxy
+supported my `libcurl` is supported, provided the the scheme can be defined with a url prefix. 
+
+Example: `proxy=https://myproxy.internal:3128/`.
+
+See [https://curl.se/libcurl/c/CURLOPT_PROXY.html](https://curl.se/libcurl/c/CURLOPT_PROXY.html).
+
+**api**
+
+There is a mechanism to [download](https://github.com/HaveIBeenPwned/PwnedPasswordsDownloader)
+ the entire 85GB+ Pwned Password database and host the API yourself. This module can be configured
+to use a different API endpoint, provided it behaves exactly the same as 
+`https://api.pwnedpasswords.com/range/`.
+
+Example: `api=https://mypwneddb.internal/range/`.
+
+The `api` and `proxy` arguments may be combined.
+
+**threshold**
+
+You may have a risk tolerance that allows a good quality password (i.e., a sufficiently long passphrase)
+that may appear in the pwned password database but for a small number of breaches as you have other 
+controls in place (e.g., MFA, network segmentation). You can define a threshold so that the module will
+stay silent and/or take no action when a password appears in the database, but the number of breaches is 
+less than the defined threshold.
+
+Example: `threshold=1000`: The module will catch the password `abc123`, but not the passphrase `This is a test.`, even though both are in the Pwned Password database.
+
+The `threshold` and `auditonly` arguments may be combined.
