@@ -3,7 +3,7 @@
 A Pluggable Authentication Module (PAM) for Linux that interacts with the 
 [Have I Been Pwned](https://haveibeenpwned.com/) **Pwned Password** API using k-Anonymity.
  It is designed work with other authentication modules 
-(e.g., pam_unix) to support both authenication and password management interfaces.
+(e.g., pam_unix) to support both authentication and password management interfaces.
 
 ## Dependencies
 
@@ -60,7 +60,8 @@ password	optional	pam_gnome_keyring.so
 
 #### Auth
 
-For the PAM auth interface, ....
+For the PAM auth interface, this module should be placed at the end of the PAM stack,
+with the control flag set to `required`.
 
 **auth stack (e.g., /etc/pam.d/common-auth)**
 ```txt  
@@ -75,6 +76,7 @@ auth    required            pam_permit.so
 # and here are more per-package modules (the "Additional" block)
 auth    optional            pam_cap.so
 # end of pam-auth-update config
+auth    required            pam_hibp.so
 ```
 
 #### Caution
