@@ -50,12 +50,12 @@ To install on a RHEL-based OS (tested with Rocky Linux:
 sudo PAM_DIR=/usr/lib64/security make install
 ```
 
-There may by several additional steps needed to get this module to work, which will ironcally
+There may be several additional steps needed on RHEL/SELinux to get this module to work, which will ironcally
 have security implications on your system. 
 
 #### LD_LIBRARY_PATH
 
-This module depends on `libhibp`, which installs in `/usr/local/lib`. The problem here is that
+This module depends on the `libhibp` library, which installs in `/usr/local/lib`. The problem here is that
 if, for example, you want to put this module in the authentication stack for `sshd`,
 the `sshd` daemon does not look there for libraries, so the module will fail without intervention.
 There are different approaches to resolving this, each with tradeoffs. One approach is to tell sshd
@@ -128,8 +128,8 @@ auth    required            pam_hibp.so
 
 #### Caution
 
-**The use of `sufficient` or `optional` control flags with this module are not recommended,
-as you will likely end-up with an insecure configuration by doing so.**
+**The use of `sufficient` or `optional` control flags with this module are not recommended**,
+as you will likely end-up with an insecure configuration by doing so.
 
 ### Module Arguments
 
