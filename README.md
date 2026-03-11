@@ -23,9 +23,56 @@ sudo dnf install pam-devel
 ```
 
 ## Building & Installing
+
+To build, simply run make:
 ```bash
 make
-sudo make install
+```
+
+Installation is a little bit tricky, a the location of PAM modules will depend on the Linux distribution,
+ and in many cases the machine architecture.
+To find the location of the PAM modules in your Linux distribution, try running the following:
+```bash
+find /usr -name pam_unix.so
+```
+
+### Debian-based distributions
+
+To install on a Debian-based OS (tested with Debian, Ubuntu, and Raspberry Pi OS):
+```bash
+sudo PAM_DIR=/usr/lib/`uname -m`-linux-gnu/security make install
+```
+
+### RHEL and SELinux
+
+To install on a RHEL-based OS (tested with Rocky Linux:
+```bash
+sudo PAM_DIR=/usr/lib64/security make install
+```
+
+There may by several additional steps needed to get this module to work, which will ironcally
+have security implications on your system. 
+
+#### LD_LIBRARY_PATH
+
+This module depends on `libhibp`, which installs in `/usr/local/lib`. The problem here is that
+if, for example, you want to put this module in the authentication stack for `sshd`,
+the `sshd` daemon does not look there for libraries, so the module will fail without intervention.
+There are different approaches to resolving this, each with tradeoffs. One approach is to tell sshd
+where to look for the `libhibp` library by running the command `sudo systemctl edit sshd` and adding
+the following lines near the beginning of the file:
+
+```ini
+[Service]
+Environment="LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH"
+```
+
+#### SELinux network security policy
+
+The default SELinux network security policy may prevent `sshd` from trying to connect to the HIBP API.
+To override this, run:
+```bash
+sudo setsebool -P nis_enabled 1
 ```
 
 ## Configuration
@@ -43,7 +90,7 @@ On a Debian-based system (including Ubuntu and Mint), a simple insertion at the 
 be all that's needed:
 
 **password stack (e.g., /etc/pam.d/common-password)**
-```txt
+```ini
 # Check if the password is pwned before doing anything else
 password    requisite           pam_hibp.so
 # here are the per-package modules (the "Primary" block)
@@ -64,7 +111,7 @@ For the PAM auth interface, this module should be placed at the end of the PAM s
 with the control flag set to `required`.
 
 **auth stack (e.g., /etc/pam.d/common-auth)**
-```txt  
+```ini
 # here are the per-package modules (the "Primary" block)
 auth    [success=1 default=ignore]  pam_unix.so nullok
 # here's the fallback if no module succeeds

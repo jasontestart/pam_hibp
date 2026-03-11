@@ -2,7 +2,11 @@ TARGET 	= pam_hibp.so
 LDFLAGS += -L/usr/local/lib -lhibp -lpam
 CFLAGS  += -I/usr/local/include
 
-PAM_DIR = /lib/x86_64-linux-gnu/security
+# Default to Debian
+PAM_DIR ?= /usr/lib/`uname -m`-linux-gnu/security
+
+# Rocky Linux
+# PAM_DIR = /usr/lib64/security/
 
 $(TARGET): pam_hibp.c
 	$(CC) -fPIC -shared -o $@ $^ $(LDFLAGS)
