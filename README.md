@@ -45,7 +45,7 @@ sudo PAM_DIR=/usr/lib/`uname -m`-linux-gnu/security make install
 
 ### RHEL-based distributions
 
-To install on a RHEL-based OS (tested with Rocky Linux:
+To install on a RHEL-based OS (tested with Rocky Linux):
 ```bash
 sudo PAM_DIR=/usr/lib64/security make install
 ```
@@ -56,13 +56,13 @@ have security implications on your system.
 
 #### LD_LIBRARY_PATH
 
-This module depends on the `libhibp` library, which installs in `/usr/local/lib`. Your system may not 
+This module depends on the `libhibp` library, which installs by default in `/usr/local/lib`. Your system may not 
 be configured to search in this directory for system libraries.  You will need to make sure that 
 `LD_LIBRARY_PATH` is set appropriately, and this may look different between a user running the `passwd`
 command, or this module being in the auth stack for a daemon like `sshd`.
 
-In the daemon scanario, one approach is to set-up the environment, specifically in `systemd`, where to look for the `libhibp` library. You can do this by running the command `sudo systemctl edit sshd` and adding
-the following lines near the beginning of the file:
+In the daemon scanario, one approach is to set-up the environment, specifically in `systemd`, where to look for the `libhibp` library.
+You can do this by running the command `sudo systemctl edit sshd` and adding the following lines near the beginning of the file:
 
 ```ini
 [Service]
@@ -84,7 +84,7 @@ sudo setsebool -P nis_enabled 1
 #### Password
 
 For the PAM password interface, this module should be placed early in the PAM stack, 
-right **before** the module that does the "real work" (typically `pam_unix`). 
+right **before** the module that does the "real work" (typically `pam_unix.so`). 
 The control flag `requisite` is recommended, so that unacceptable passwords are
 rejected early.
 
@@ -121,6 +121,11 @@ auth    optional            pam_cap.so
 auth    required            pam_hibp.so
 ```
 
+#### Account and Session
+
+This module acts as a pass-through when configured with the `account` or `session` interfaces. In other words, it does notthing but
+return `PAM_SUCCESS`.
+
 #### Caution
 
 **The use of `sufficient` or `optional` control flags with this module are not recommended**,
@@ -129,7 +134,8 @@ as you will likely end-up with an insecure configuration by doing so.
 ### Module Arguments
 
 With no arguments, the `pam_hibp` module, through `libhibp`, will take the SHA1 hash of the provided
-password, and using k-Anonymity, will lookup the hash using the [Pwned Password API](https://haveibeenpwned.com/API/v3#PwnedPasswords) at `https://api.pwnedpasswords.com/range/`.
+password and, using k-Anonymity, will lookup the hash using the [Pwned Password API](https://haveibeenpwned.com/API/v3#PwnedPasswords)
+at `https://api.pwnedpasswords.com/range/`.
 If the hash is found one or more times in the database, then authentication (or password change) is rejected
  and the action is recorded to syslog. The module's behaviour may be modified with the following arguments:
 
@@ -143,7 +149,7 @@ Authentication or password change will not be affected by the module.
 You can configure the module to use a proxy server when connecting to the Pwned Password API. Any proxy
 supported by `libcurl` is supported, provided the the scheme can be defined with a url prefix. 
 
-Example: `proxy=https://myproxy.internal:3128/`.
+Example: `proxy=https://mysquidproxy.internal:3128/`.
 
 See [https://curl.se/libcurl/c/CURLOPT_PROXY.html](https://curl.se/libcurl/c/CURLOPT_PROXY.html).
 
@@ -161,7 +167,7 @@ The `api` and `proxy` arguments may be combined.
 **threshold**
 
 You may have a risk tolerance that allows a good quality password (i.e., a sufficiently long passphrase)
-that may appear in the pwned password database but for a small number of breaches as you have other 
+that may appear in the pwned password database but for a small number of breaches, as you have other 
 controls in place (e.g., MFA, network segmentation). You can define a threshold so that the module will
 stay silent and/or take no action when a password appears in the database, but the number of breaches is 
 less than the defined threshold.
