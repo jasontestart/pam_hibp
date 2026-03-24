@@ -167,11 +167,11 @@ The `api` and `proxy` arguments may be combined.
 **threshold**
 
 You may have a risk tolerance that allows a good quality password (i.e., a sufficiently long passphrase)
-that may appear in the pwned password database but for a small number of breaches, as you have other 
-controls in place (e.g., MFA, network segmentation). You can define a threshold so that the module will
-stay silent and/or take no action when a password appears in the database, but the number of breaches is 
-less than the defined threshold.
+that may appear in the Pwned Password database but for a small number of breaches, as you have other 
+controls in place (e.g., MFA, network segmentation). You can define a threshold so that the module will only take
+action and/or log when the password is in the Pwned Password database and the number of breaches found exceeds the 
+defined threshold. This value must be a whole number.
 
 Example: `threshold=1000`: The module will catch the password `abc123`, but not the passphrase `This is a test.`, even though both are in the Pwned Password database.
 
-The `threshold` and `auditonly` arguments may be combined.
+When this argument is absent, the default value for threashold is zero. The `threshold` and `auditonly` arguments may be combined.
