@@ -12,25 +12,24 @@ int parse_argc(int argc, const char **argv,
 
     /* Parse Arguments from /etc/pam.d/ */
     for (int i = 0; i < argc; i++) {
-        if (strncmp(argv[i], "proxy=", 6) == 0) {
+        if (!strncmp(argv[i], "proxy=", 6)) {
             *proxy_url = (char *)(argv[i] + 6);
-        } else if (strncmp(argv[i], "api=", 4) == 0) {
+        } else if (!strncmp(argv[i], "api=", 4)) {
             *api_url = (char *)(argv[i] + 4);
-		} else if (strncmp(argv[i], "threshold=", 10) == 0) {
+        } else if (!strncmp(argv[i], "threshold=", 10)) {
             *threshold = atoll(argv[i] + 10);
-        } else if (strcmp(argv[i], "auditonly") == 0) {
+        } else if (!strcmp(argv[i], "auditonly")) {
             *audit_only = 1;
         } else {
-			result = 0;
-		}
+            result = 0;
+        }
     }
 
-	if (*threshold < 0) {
-		result = 0;
-	}
-	
-    return result;
+    if (*threshold < 0) {
+        result = 0;
+    }
 
+    return result;
 }
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv) {
@@ -102,11 +101,11 @@ PAM_EXTERN int pam_sm_chauthtok(pam_handle_t *pamh, int flags, int argc, const c
     /* Password interface is a bit different from authenticate interface. */
     if (count > threshold) {
         if (audit_only) {
-			pam_syslog(pamh, LOG_NOTICE, "User set a password known to be compromised (audit mode).");
-			return PAM_SUCCESS;
-		} else {
-			pam_syslog(pamh, LOG_NOTICE, "User attempted to set a pwned password (from %lld breaches).", count);
-		}
+            pam_syslog(pamh, LOG_NOTICE, "User set a password known to be compromised (audit mode).");
+            return PAM_SUCCESS;
+        } else {
+            pam_syslog(pamh, LOG_NOTICE, "User attempted to set a pwned password (from %lld breaches).", count);
+        }
 
         /* Inform the user why they are being rejected */
         pam_error(pamh, "Password rejected due to known compromise.");
@@ -116,7 +115,7 @@ PAM_EXTERN int pam_sm_chauthtok(pam_handle_t *pamh, int flags, int argc, const c
     return PAM_SUCCESS;
 }
 
-/* pass through for N/A interfaces */
+/* pass through for interfaces we don't implement */
 
 PAM_EXTERN int
 pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char *argv[])
